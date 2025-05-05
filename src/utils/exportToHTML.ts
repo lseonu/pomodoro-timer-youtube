@@ -1,12 +1,6 @@
 import { TimerSettings, Video } from '../types';
 
 export function exportToHTML(settings: TimerSettings, videos: Video[]) {
-  function formatTime(seconds: number): string {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }
-
   const htmlTemplate = `<!DOCTYPE html>
 <html>
 <head>
@@ -50,7 +44,7 @@ export function exportToHTML(settings: TimerSettings, videos: Video[]) {
   <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
     <div class="text-center">
       <h1 class="text-2xl font-bold mb-4">Pomodoro Timer</h1>
-      <div id="timer" class="text-6xl font-bold mb-8">${formatTime(settings.workTime * 60)}</div>
+      <div id="timer" class="text-6xl font-bold mb-8">${formatTime(settings.studyDuration * 60)}</div>
       <div id="video-container" class="mb-8 hidden">
         <div class="video-container">
           <div id="player"></div>
@@ -66,7 +60,7 @@ export function exportToHTML(settings: TimerSettings, videos: Video[]) {
 
   <script>
     const settings = ${JSON.stringify({
-      workTime: settings.workTime,
+      studyDuration: settings.studyDuration,
       breakTime: settings.breakTime,
       longBreakDuration: settings.longBreakDuration,
       sessions: settings.sessions,
@@ -78,7 +72,7 @@ export function exportToHTML(settings: TimerSettings, videos: Video[]) {
     const videoPositions = JSON.parse(localStorage.getItem('pomodoroVideoPositions') || '{}');
     
     let timer;
-    let timeLeft = settings.workTime * 60;
+    let timeLeft = settings.studyDuration * 60;
     let isRunning = false;
     let isBreak = false;
     let currentSession = 1;
@@ -90,6 +84,12 @@ export function exportToHTML(settings: TimerSettings, videos: Video[]) {
     const startBtn = document.getElementById('start-btn');
     const skipBtn = document.getElementById('skip-btn');
     const resetBtn = document.getElementById('reset-btn');
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return \`\${minutes.toString().padStart(2, '0')}:\${remainingSeconds.toString().padStart(2, '0')}\`;
+    }
 
     function updateTimer() {
       timerElement.textContent = formatTime(timeLeft);
@@ -103,7 +103,7 @@ export function exportToHTML(settings: TimerSettings, videos: Video[]) {
         if (currentSession < settings.sessions) {
           isBreak = false;
           currentSession++;
-          timeLeft = settings.workTime * 60;
+          timeLeft = settings.studyDuration * 60;
           videoContainer.classList.add('hidden');
           if (player) {
             const videoId = videos[currentVideoIndex].id;
@@ -116,7 +116,7 @@ export function exportToHTML(settings: TimerSettings, videos: Video[]) {
           isRunning = false;
           isBreak = false;
           currentSession = 1;
-          timeLeft = settings.workTime * 60;
+          timeLeft = settings.studyDuration * 60;
           videoContainer.classList.add('hidden');
           if (player) {
             player.destroy();
@@ -196,7 +196,7 @@ export function exportToHTML(settings: TimerSettings, videos: Video[]) {
       isRunning = false;
       isBreak = false;
       currentSession = 1;
-      timeLeft = settings.workTime * 60;
+      timeLeft = settings.studyDuration * 60;
       videoContainer.classList.add('hidden');
       startBtn.textContent = 'Start';
       if (player) {
@@ -219,4 +219,10 @@ export function exportToHTML(settings: TimerSettings, videos: Video[]) {
   a.download = 'pomodoro-timer.html';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function formatTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 } 

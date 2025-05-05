@@ -1,82 +1,80 @@
-import React, { useState, useEffect, Dispatch, SetStateAction } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { TimerSettings, Video } from '../types';
-import { GuaranteedYouTubePlayer } from './GuaranteedYouTubePlayer';
-import { VideoPositionEngine } from '../services/videoPositionEngine';
-
-interface TimerState {
-  isRunning: boolean;
-  isBreak: boolean;
-  currentSession: number;
-  timeLeft: number;
-}
+import GuaranteedYouTubePlayer from './GuaranteedYouTubePlayer';
 
 interface TimerProps {
   settings: TimerSettings;
   videos: Video[];
-  timerState: TimerState;
-  onTimerStateChange: Dispatch<SetStateAction<TimerState>>;
 }
 
-const Timer: React.FC<TimerProps> = ({ settings, videos, timerState, onTimerStateChange }) => {
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [playerReady, setPlayerReady] = useState(false);
-  const positionEngine = VideoPositionEngine.getInstance();
+const Timer = ({ settings, videos }: TimerProps) => {
+  const [timerState, setTimerState] = useState({
+    isRunning: false,
+    isBreak: false,
+    currentSession: 1,
+    timeLeft: settings.workTime * 60,
+    totalSessions: settings.sessions,
+  });
 
-  // Initialize timer with settings
-  useEffect(() => {
-    onTimerStateChange({
-      isRunning: false,
-      isBreak: false,
-      currentSession: 1,
-      timeLeft: settings.workTime * 60
-    });
-  }, [settings.workTime]);
+  const intervalRef = useRef<number>();
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (timerState.isRunning && timerState.timeLeft > 0) {
-      timer = setInterval(() => {
-        onTimerStateChange(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 }));
-      }, 1000);
-    } else if (timerState.timeLeft === 0) {
-      onTimerStateChange(prev => ({ ...prev, isRunning: false }));
-      if (timerState.isBreak) {
-        if (videos.length > 0) {
-          const currentVideo = videos[currentVideoIndex];
-          positionEngine.getPosition(currentVideo.id).then(currentTime => {
-            positionEngine.savePosition(currentVideo.id, currentTime);
-          });
-        }
-        onTimerStateChange(prev => ({ 
-          ...prev, 
-          isBreak: false,
-          timeLeft: settings.workTime * 60 
-        }));
-      } else {
-        onTimerStateChange(prev => ({ 
-          ...prev, 
-          isBreak: true,
-          timeLeft: settings.breakTime * 60 
-        }));
-        setCurrentVideoIndex((prev) => (prev + 1) % videos.length);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
-    }
-    return () => clearInterval(timer);
-  }, [timerState.isRunning, timerState.timeLeft, timerState.isBreak, settings.workTime, settings.breakTime, videos.length, currentVideoIndex, videos]);
+    };
+  }, []);
 
-  const toggleTimer = () => {
-    onTimerStateChange(prev => ({ ...prev, isRunning: !prev.isRunning }));
+  const startTimer = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = window.setInterval(() => {
+      setTimerState((prev) => {
+        if (prev.timeLeft <= 0) {
+          if (prev.currentSession >= prev.totalSessions) {
+            clearInterval(intervalRef.current);
+            return { ...prev, isRunning: false };
+          }
+
+          const isLongBreak = prev.currentSession % settings.longBreakAfter === 0;
+          const breakDuration = isLongBreak ? settings.longBreakDuration : settings.breakTime;
+
+          return {
+            ...prev,
+            isBreak: true,
+            timeLeft: breakDuration * 60,
+            currentSession: prev.currentSession + 1,
+          };
+        }
+
+        return { ...prev, timeLeft: prev.timeLeft - 1 };
+      });
+    }, 1000);
+
+    setTimerState((prev) => ({ ...prev, isRunning: true }));
+  };
+
+  const pauseTimer = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    setTimerState((prev) => ({ ...prev, isRunning: false }));
   };
 
   const resetTimer = () => {
-    onTimerStateChange({
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    setTimerState({
       isRunning: false,
       isBreak: false,
       currentSession: 1,
-      timeLeft: settings.workTime * 60
+      timeLeft: settings.workTime * 60,
+      totalSessions: settings.sessions,
     });
-    setCurrentVideoIndex(0);
-    positionEngine.clearAllPositions();
   };
 
   const formatTime = (seconds: number) => {
@@ -85,32 +83,58 @@ const Timer: React.FC<TimerProps> = ({ settings, videos, timerState, onTimerStat
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const currentVideo = videos[timerState.currentSession % videos.length];
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="text-6xl font-bold">{formatTime(timerState.timeLeft)}</div>
-      <div className="text-2xl">{timerState.isBreak ? 'Break Time' : 'Work Time'}</div>
-      
-      <div className="flex space-x-4">
-        <button
-          onClick={toggleTimer}
-          className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          {timerState.isRunning ? 'Pause' : 'Start'}
-        </button>
+    <div className="space-y-4">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold">
+          {timerState.isBreak ? 'Break Time' : 'Work Time'}
+        </h2>
+        <p className="text-4xl font-mono">{formatTime(timerState.timeLeft)}</p>
+        <p className="text-sm text-gray-600">
+          Session {timerState.currentSession} of {timerState.totalSessions}
+        </p>
+      </div>
+
+      <div className="flex justify-center gap-4">
+        {!timerState.isRunning ? (
+          <button
+            onClick={startTimer}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Start
+          </button>
+        ) : (
+          <button
+            onClick={pauseTimer}
+            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+          >
+            Pause
+          </button>
+        )}
         <button
           onClick={resetTimer}
-          className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
         >
           Reset
         </button>
       </div>
 
-      {videos.length > 0 && (
-        <div className="w-full max-w-4xl aspect-video mt-8">
+      {timerState.isBreak && currentVideo && (
+        <div className="mt-4">
           <GuaranteedYouTubePlayer
-            videoId={videos[currentVideoIndex].id}
-            onReady={() => setPlayerReady(true)}
+            video={currentVideo}
             isBreak={timerState.isBreak}
+            onVideoEnd={() => {
+              if (timerState.isBreak) {
+                setTimerState((prev) => ({
+                  ...prev,
+                  isBreak: false,
+                  timeLeft: settings.workTime * 60,
+                }));
+              }
+            }}
           />
         </div>
       )}

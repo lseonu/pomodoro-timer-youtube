@@ -6,50 +6,49 @@ interface VideoPosition {
 
 export class VideoPositionEngine {
   private static instance: VideoPositionEngine;
-  private positions: Record<string, VideoPosition> = {};
+  private positions: Map<string, number>;
+  private static STORAGE_KEY = 'videoPositions';
   private activeSessions: Set<string> = new Set();
   private verificationQueue: Map<string, NodeJS.Timeout> = new Map();
-  private static STORAGE_KEY = 'videoPositions';
 
   private constructor() {
-    this.loadFromStorage();
+    this.positions = new Map();
+    this.loadPositions();
     window.addEventListener('beforeunload', () => this.saveAllPositions());
   }
 
-  static getInstance(): VideoPositionEngine {
+  public static getInstance(): VideoPositionEngine {
     if (!VideoPositionEngine.instance) {
       VideoPositionEngine.instance = new VideoPositionEngine();
     }
     return VideoPositionEngine.instance;
   }
 
-  private loadFromStorage() {
-    try {
-      const saved = localStorage.getItem(VideoPositionEngine.STORAGE_KEY);
-      if (saved) {
-        this.positions = JSON.parse(saved);
+  private loadPositions(): void {
+    const saved = localStorage.getItem(VideoPositionEngine.STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        this.positions = new Map(Object.entries(parsed));
+      } catch (e) {
+        console.error('Failed to load video positions:', e);
+        this.positions = new Map();
       }
-    } catch (error) {
-      console.error('Failed to load positions from storage:', error);
-      this.positions = {};
     }
   }
 
-  private saveToStorage() {
-    try {
-      localStorage.setItem(VideoPositionEngine.STORAGE_KEY, JSON.stringify(this.positions));
-    } catch (error) {
-      console.error('Failed to save positions to storage:', error);
-    }
+  private savePositions(): void {
+    const serialized = JSON.stringify(Object.fromEntries(this.positions));
+    localStorage.setItem(VideoPositionEngine.STORAGE_KEY, serialized);
   }
 
   public registerSession(videoId: string) {
     this.activeSessions.add(videoId);
-    if (!this.positions[videoId]) {
-      this.positions[videoId] = { lastSaved: 0, lastVerified: 0, sessionCount: 0 };
+    if (!this.positions.has(videoId)) {
+      this.positions.set(videoId, 0);
     }
-    this.positions[videoId].sessionCount++;
-    this.saveToStorage();
+    this.positions.set(videoId, this.positions.get(videoId) + 1);
+    this.savePositions();
   }
 
   public unregisterSession(videoId: string) {
@@ -57,20 +56,19 @@ export class VideoPositionEngine {
     this.savePosition(videoId);
   }
 
-  public async getPosition(videoId: string): Promise<number> {
-    return this.positions[videoId]?.lastSaved || 0;
+  public getPosition(videoId: string): number {
+    return this.positions.get(videoId) || 0;
   }
 
-  public async savePosition(videoId: string, time?: number) {
-    if (!this.positions[videoId]) {
-      this.positions[videoId] = { lastSaved: 0, lastVerified: 0, sessionCount: 0 };
-    }
-    
-    if (time !== undefined) {
-      this.positions[videoId].lastSaved = time;
-      this.positions[videoId].lastVerified = time;
-    }
-    this.saveToStorage();
+  public incrementPosition(videoId: string): void {
+    const currentPosition = this.getPosition(videoId);
+    this.positions.set(videoId, currentPosition + 1);
+    this.savePositions();
+  }
+
+  public savePosition(videoId: string, position: number): void {
+    this.positions.set(videoId, position);
+    this.savePositions();
   }
 
   public scheduleVerification(videoId: string, player: YT.Player) {
@@ -78,14 +76,13 @@ export class VideoPositionEngine {
     
     const timer = setTimeout(() => {
       const currentTime = player.getCurrentTime();
-      const savedTime = this.positions[videoId]?.lastSaved || 0;
+      const savedTime = this.positions.get(videoId) || 0;
       
       if (Math.abs(currentTime - savedTime) > 2) {
         player.seekTo(savedTime, true);
       }
       
-      this.positions[videoId].lastVerified = currentTime;
-      this.savePosition(videoId, currentTime);
+      this.positions.set(videoId, currentTime);
     }, 1500);
     
     this.verificationQueue.set(videoId, timer);
@@ -98,11 +95,11 @@ export class VideoPositionEngine {
   }
 
   private saveAllPositions() {
-    this.saveToStorage();
+    this.savePositions();
   }
 
-  public clearAllPositions() {
-    this.positions = {};
+  public clearAllPositions(): void {
+    this.positions.clear();
     this.activeSessions.clear();
     this.verificationQueue.clear();
     localStorage.removeItem(VideoPositionEngine.STORAGE_KEY);
@@ -113,4 +110,11 @@ export class VideoPositionEngine {
     console.log('Current positions:', this.positions);
     console.log('Active sessions:', Array.from(this.activeSessions));
   }
-} 
+
+  public clearPosition(videoId: string): void {
+    this.positions.delete(videoId);
+    this.savePositions();
+  }
+}
+
+export default VideoPositionEngine; 

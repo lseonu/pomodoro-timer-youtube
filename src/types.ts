@@ -19,6 +19,7 @@ export interface TimerState {
   isBreak: boolean;
   currentSession: number;
   timeLeft: number;
+  totalSessions: number;
 }
 
 export interface TimerProps {
@@ -88,35 +89,4 @@ declare global {
   }
 }
 
-interface YT {
-  Player: {
-    new (
-      elementId: string | HTMLElement,
-      config: {
-        videoId: string;
-        playerVars?: {
-          autoplay?: number;
-          rel?: number;
-          modestbranding?: number;
-          playsinline?: number;
-          enablejsapi?: number;
-          origin?: string;
-          mute?: number;
-          controls?: number;
-        };
-        events?: {
-          onReady?: (event: { target: YT.Player }) => void;
-          onStateChange?: (event: { data: YT.PlayerState; target: YT.Player }) => void;
-        };
-      }
-    ): YT.Player;
-  };
-  PlayerState: {
-    UNSTARTED: -1;
-    ENDED: 0;
-    PLAYING: 1;
-    PAUSED: 2;
-    BUFFERING: 3;
-    CUED: 5;
-  };
-} 
+export type { YT }; 

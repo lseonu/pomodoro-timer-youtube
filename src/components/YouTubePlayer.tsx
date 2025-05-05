@@ -1,72 +1,77 @@
-import { useEffect, useRef } from 'react';
-import { useVideoPlayer } from '../hooks/useVideoPlayer';
+import React, { useEffect, useRef } from 'react';
+import { Video } from '../types';
 
 interface YouTubePlayerProps {
-  videoId: string;
-  onPlayerReady?: (player: YT.Player) => void;
-  onStateChange?: (event: YT.OnStateChangeEvent) => void;
+  video: Video;
+  onStateChange?: (event: { data: number }) => void;
 }
 
-export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
-  videoId,
-  onPlayerReady,
-  onStateChange
-}) => {
+const YouTubePlayer: React.FC<YouTubePlayerProps> = ({ video, onStateChange }) => {
   const playerRef = useRef<YT.Player | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { setCurrentVideoId, seekToStoredTime } = useVideoPlayer();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setCurrentVideoId(videoId);
-
     if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
-      document.body.appendChild(tag);
-    }
+      const firstScript = document.getElementsByTagName('script')[0];
+      if (firstScript && firstScript.parentNode) {
+        firstScript.parentNode.insertBefore(tag, firstScript);
+      } else {
+        document.body.appendChild(tag);
+      }
 
-    window.onYouTubeIframeAPIReady = () => {
-      playerRef.current = new window.YT.Player(iframeRef.current!, {
-        videoId,
+      window.onYouTubeIframeAPIReady = () => {
+        if (containerRef.current) {
+          playerRef.current = new window.YT.Player(containerRef.current, {
+            videoId: video.id,
+            playerVars: {
+              autoplay: 1,
+              rel: 0,
+              modestbranding: 1,
+              playsinline: 1,
+              enablejsapi: 1,
+              origin: window.location.origin
+            },
+            events: {
+              onStateChange: (event) => {
+                if (onStateChange) {
+                  onStateChange(event);
+                }
+              }
+            }
+          });
+        }
+      };
+    } else if (containerRef.current) {
+      playerRef.current = new window.YT.Player(containerRef.current, {
+        videoId: video.id,
         playerVars: {
           autoplay: 1,
           rel: 0,
           modestbranding: 1,
           playsinline: 1,
           enablejsapi: 1,
-          origin: window.location.origin,
-          mute: 1,
-          controls: 1
+          origin: window.location.origin
         },
         events: {
-          onReady: (event) => {
-            seekToStoredTime(videoId);
-            if (onPlayerReady) onPlayerReady(event.target);
-          },
           onStateChange: (event) => {
-            if (event.data === window.YT.PlayerState.PLAYING) {
-              // Final seek check when playback actually starts
-              setTimeout(() => seekToStoredTime(videoId), 500);
+            if (onStateChange) {
+              onStateChange(event);
             }
-            if (onStateChange) onStateChange(event);
           }
         }
       });
-    };
+    }
 
     return () => {
       if (playerRef.current) {
         playerRef.current.destroy();
       }
     };
-  }, [videoId]);
+  }, [video.id, onStateChange]);
 
-  return (
-    <iframe
-      ref={iframeRef}
-      className="w-full h-full"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-    />
-  );
-}; 
+  return <div ref={containerRef} />;
+};
+
+export default YouTubePlayer; 
