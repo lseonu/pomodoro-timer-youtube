@@ -1,28 +1,29 @@
-# Pomodoro Timer with YouTube Videos
+# Pomodoro Timer with YouTube Integration
 
-A productivity tool that combines the Pomodoro technique with YouTube video playback during breaks. Perfect for study sessions, work intervals, and maintaining focus.
+A modern Pomodoro Timer application that helps you stay focused and productive by integrating YouTube videos during break times. Built with React, TypeScript, and Vite.
 
 ## Features
 
 - Customizable work and break durations
 - YouTube video playback during breaks
 - Video position tracking (resumes from where you left off)
-- Export as standalone HTML file
-- Modern, clean UI with Tailwind CSS
+- Drag-and-drop video playlist management
+- Export timer settings and video list as HTML
+- Modern and responsive UI
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (v14 or higher)
-- npm or yarn
+- npm (v6 or higher)
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/pomodoro-maker.git
-   cd pomodoro-maker
+   git clone https://github.com/lseonu/pomodoro-timer-youtube.git
+   cd pomodoro-timer-youtube
    ```
 
 2. Install dependencies:
@@ -35,13 +36,25 @@ A productivity tool that combines the Pomodoro technique with YouTube video play
    npm run dev
    ```
 
+4. Open your browser and navigate to `http://localhost:5173`
+
 ## Usage
 
-1. Set your preferred work and break durations
-2. Add YouTube videos for your break time
-3. Click "Start" to begin your Pomodoro session
-4. During breaks, enjoy your selected videos
-5. Export as HTML for offline use
+1. Set your desired work and break durations in the Timer Settings section
+2. Add YouTube videos to your break time playlist
+3. Click "Start Timer" to begin your work session
+4. When the break starts, your selected video will play automatically
+5. The timer will notify you when it's time to get back to work
+
+## Building for Production
+
+To create a production build:
+
+```bash
+npm run build
+```
+
+The built files will be in the `dist` directory.
 
 ## Deployment
 
