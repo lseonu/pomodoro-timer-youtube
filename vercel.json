@@ -5,6 +5,16 @@
   "outputDirectory": "dist",
   "routes": [
     {
+      "src": "/assets/(.*)\\.js$",
+      "headers": {
+        "Content-Type": "application/javascript"
+      },
+      "continue": true
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }

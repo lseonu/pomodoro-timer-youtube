@@ -44,16 +44,15 @@ export class VideoPositionEngine {
 
   public registerSession(videoId: string) {
     this.activeSessions.add(videoId);
-    if (!this.positions.has(videoId)) {
-      this.positions.set(videoId, 0);
-    }
-    this.positions.set(videoId, this.positions.get(videoId) + 1);
+    const currentPosition = this.positions.get(videoId) || 0;
+    this.positions.set(videoId, currentPosition + 1);
     this.savePositions();
   }
 
   public unregisterSession(videoId: string) {
     this.activeSessions.delete(videoId);
-    this.savePosition(videoId);
+    const currentPosition = this.positions.get(videoId) || 0;
+    this.savePosition(videoId, currentPosition);
   }
 
   public getPosition(videoId: string): number {
