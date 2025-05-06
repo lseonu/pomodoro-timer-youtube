@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { FaUpload } from 'react-icons/fa';
+import { 
+  Box, 
+  TextField, 
+  Button, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  IconButton,
+  Paper
+} from '@mui/material';
+import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { Video } from '../types';
 import SortableItem from './SortableItem';
 
@@ -58,34 +68,39 @@ const VideoList: React.FC<VideoListProps> = ({ videos, onVideosChange }) => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        <input
-          type="text"
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <TextField
+          fullWidth
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Enter YouTube URL"
-          className="flex-1 p-2 border rounded"
+          variant="outlined"
+          size="small"
         />
-        <button
+        <Button
+          variant="contained"
           onClick={handleAddVideo}
-          className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          startIcon={<AddIcon />}
         >
-          <FaUpload />
-        </button>
-      </div>
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <SortableContext items={videos.map(v => v.id)} strategy={verticalListSortingStrategy}>
-          {videos.map((video) => (
-            <SortableItem
-              key={video.id}
-              video={video}
-              onRemove={handleRemoveVideo}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
-    </div>
+          Add Video
+        </Button>
+      </Box>
+      
+      <Paper variant="outlined" sx={{ maxHeight: 300, overflow: 'auto' }}>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <SortableContext items={videos.map(v => v.id)} strategy={verticalListSortingStrategy}>
+            {videos.map((video) => (
+              <SortableItem
+                key={video.id}
+                video={video}
+                onRemove={handleRemoveVideo}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      </Paper>
+    </Box>
   );
 };
 

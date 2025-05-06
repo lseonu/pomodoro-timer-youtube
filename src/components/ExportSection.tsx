@@ -1,36 +1,145 @@
-import React from 'react';
-import { FaFileExport } from 'react-icons/fa';
-import { exportToHTML } from '../utils/exportToHTML';
-import { TimerSettings, Video } from '../types';
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Button, 
+  Card, 
+  CardContent, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  TextField, 
+  Typography,
+  IconButton,
+  Alert,
+  CircularProgress
+} from '@mui/material';
+import { 
+  FileDownload as FileDownloadIcon,
+  VideoFile as VideoFileIcon,
+  Lock as LockIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
+import { Video } from '../types';
 
 interface ExportSectionProps {
-  settings: TimerSettings;
   videos: Video[];
 }
 
-const ExportSection = ({ settings, videos }: ExportSectionProps) => {
+const ExportSection: React.FC<ExportSectionProps> = ({ videos }) => {
+  const [showPopup, setShowPopup] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
   const handleExport = () => {
-    if (videos.length === 0) {
-      alert('Please add at least one video before exporting.');
-      return;
-    }
-    exportToHTML(settings, videos);
+    // Export logic here
+  };
+
+  const handlePremiumClick = () => {
+    setShowPopup(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    // Create mailto link
+    const subject = 'Premium Feature Interest - Pomodoro Timer';
+    const body = `I'm interested in the premium video export feature. My email is: ${email}`;
+    const mailtoLink = `mailto:leeseonwoo0324@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Open email client
+    window.location.href = mailtoLink;
+    
+    // Simulate success
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitStatus('success');
+      setTimeout(() => {
+        setShowPopup(false);
+        setEmail('');
+        setSubmitStatus('idle');
+      }, 2000);
+    }, 1000);
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-xl font-semibold mb-4">Export Timer</h2>
-      <button
-        onClick={handleExport}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-      >
-        <FaFileExport />
-        Export as HTML
-      </button>
-      <p className="mt-2 text-sm text-gray-600">
-        Export your timer with videos as a standalone HTML file.
-      </p>
-    </div>
+    <Card>
+      <CardContent>
+        <Typography variant="h5" gutterBottom>
+          Export Options
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExport}
+          >
+            Export as Text
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<VideoFileIcon />}
+            endIcon={<LockIcon />}
+            onClick={handlePremiumClick}
+          >
+            Premium - Export as Video
+          </Button>
+        </Box>
+      </CardContent>
+
+      <Dialog open={showPopup} onClose={() => setShowPopup(false)}>
+        <DialogTitle>
+          Premium Feature - Coming Soon!
+          <IconButton
+            onClick={() => setShowPopup(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Typography paragraph>
+            The video export feature is currently in beta. Enter your email below to be notified when it's available, and you'll receive free premium access!
+          </Typography>
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isSubmitting || submitStatus === 'success'}
+              sx={{ mt: 2 }}
+            />
+            {submitStatus === 'error' && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                There was an error submitting your email. Please try again or email us directly.
+              </Alert>
+            )}
+            {submitStatus === 'success' && (
+              <Alert severity="success" sx={{ mt: 2 }}>
+                Thank you for your interest! We'll be in touch soon.
+              </Alert>
+            )}
+            <DialogActions>
+              <Button onClick={() => setShowPopup(false)}>Cancel</Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting || submitStatus === 'success'}
+                startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit'}
+              </Button>
+            </DialogActions>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 };
 

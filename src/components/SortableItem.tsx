@@ -1,15 +1,21 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { 
+  ListItem, 
+  ListItemText, 
+  IconButton,
+  Box
+} from '@mui/material';
+import { Delete as DeleteIcon, DragIndicator as DragIcon } from '@mui/icons-material';
 import { Video } from '../types';
-import { FaGripVertical, FaTrash } from 'react-icons/fa';
 
 interface SortableItemProps {
   video: Video;
   onRemove: (id: string) => void;
 }
 
-const SortableItem = ({ video, onRemove }: SortableItemProps) => {
+const SortableItem: React.FC<SortableItemProps> = ({ video, onRemove }) => {
   const {
     attributes,
     listeners,
@@ -24,20 +30,40 @@ const SortableItem = ({ video, onRemove }: SortableItemProps) => {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <div className="flex items-center justify-between p-2 bg-gray-100 rounded">
-        <div className="flex items-center gap-2">
-          <FaGripVertical className="text-gray-500 cursor-move" />
-          <span>{video.title}</span>
-        </div>
-        <button
-          onClick={() => onRemove(video.id)}
-          className="text-red-500 hover:text-red-700"
+    <ListItem
+      ref={setNodeRef}
+      style={style}
+      sx={{
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        '&:last-child': {
+          borderBottom: 'none'
+        }
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+        <IconButton
+          {...attributes}
+          {...listeners}
+          size="small"
+          sx={{ mr: 1 }}
         >
-          <FaTrash />
-        </button>
-      </div>
-    </div>
+          <DragIcon />
+        </IconButton>
+        <ListItemText 
+          primary={video.title}
+          secondary={video.url}
+          sx={{ flex: 1 }}
+        />
+        <IconButton
+          onClick={() => onRemove(video.id)}
+          size="small"
+          sx={{ ml: 1 }}
+        >
+          <DeleteIcon />
+        </IconButton>
+      </Box>
+    </ListItem>
   );
 };
 

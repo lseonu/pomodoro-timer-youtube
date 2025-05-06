@@ -10,8 +10,8 @@ export interface TimerSettings {
 
 export interface Video {
   id: string;
-  url: string;
   title: string;
+  url: string;
 }
 
 export interface TimerState {

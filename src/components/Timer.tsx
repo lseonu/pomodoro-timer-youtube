@@ -1,144 +1,112 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { TimerSettings, Video } from '../types';
-import GuaranteedYouTubePlayer from './GuaranteedYouTubePlayer';
+import React from 'react';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Paper,
+  IconButton
+} from '@mui/material';
+import { 
+  PlayArrow as PlayIcon, 
+  Pause as PauseIcon, 
+  Refresh as RefreshIcon 
+} from '@mui/icons-material';
 
 interface TimerProps {
-  settings: TimerSettings;
-  videos: Video[];
+  timeLeft: number;
+  isRunning: boolean;
+  isBreak: boolean;
+  currentSession: number;
+  totalSessions: number;
+  onStart: () => void;
+  onPause: () => void;
+  onReset: () => void;
 }
 
-const Timer = ({ settings, videos }: TimerProps) => {
-  const [timerState, setTimerState] = useState({
-    isRunning: false,
-    isBreak: false,
-    currentSession: 1,
-    timeLeft: settings.workTime * 60,
-    totalSessions: settings.sessions,
-  });
-
-  const intervalRef = useRef<number>();
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  const startTimer = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    intervalRef.current = window.setInterval(() => {
-      setTimerState((prev) => {
-        if (prev.timeLeft <= 0) {
-          if (prev.currentSession >= prev.totalSessions) {
-            clearInterval(intervalRef.current);
-            return { ...prev, isRunning: false };
-          }
-
-          const isLongBreak = prev.currentSession % settings.longBreakAfter === 0;
-          const breakDuration = isLongBreak ? settings.longBreakDuration : settings.breakTime;
-
-          return {
-            ...prev,
-            isBreak: true,
-            timeLeft: breakDuration * 60,
-            currentSession: prev.currentSession + 1,
-          };
-        }
-
-        return { ...prev, timeLeft: prev.timeLeft - 1 };
-      });
-    }, 1000);
-
-    setTimerState((prev) => ({ ...prev, isRunning: true }));
-  };
-
-  const pauseTimer = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    setTimerState((prev) => ({ ...prev, isRunning: false }));
-  };
-
-  const resetTimer = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    setTimerState({
-      isRunning: false,
-      isBreak: false,
-      currentSession: 1,
-      timeLeft: settings.workTime * 60,
-      totalSessions: settings.sessions,
-    });
-  };
-
-  const formatTime = (seconds: number) => {
+const Timer: React.FC<TimerProps> = ({
+  timeLeft,
+  isRunning,
+  isBreak,
+  currentSession,
+  totalSessions,
+  onStart,
+  onPause,
+  onReset,
+}) => {
+  const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const currentVideo = videos[timerState.currentSession % videos.length];
-
   return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold">
-          {timerState.isBreak ? 'Break Time' : 'Work Time'}
-        </h2>
-        <p className="text-4xl font-mono">{formatTime(timerState.timeLeft)}</p>
-        <p className="text-sm text-gray-600">
-          Session {timerState.currentSession} of {timerState.totalSessions}
-        </p>
-      </div>
+    <Paper 
+      elevation={3} 
+      sx={{ 
+        p: 4, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        maxWidth: 400,
+        mx: 'auto'
+      }}
+    >
+      <Box 
+        sx={{ 
+          width: 200, 
+          height: 200, 
+          borderRadius: '50%', 
+          border: '4px solid',
+          borderColor: isBreak ? 'primary.main' : 'secondary.main',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          mb: 3
+        }}
+      >
+        <Typography variant="h2" component="div">
+          {formatTime(timeLeft)}
+        </Typography>
+      </Box>
 
-      <div className="flex justify-center gap-4">
-        {!timerState.isRunning ? (
-          <button
-            onClick={startTimer}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            Start
-          </button>
-        ) : (
-          <button
-            onClick={pauseTimer}
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-          >
-            Pause
-          </button>
-        )}
-        <button
-          onClick={resetTimer}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+      <Typography variant="h6" color="text.secondary" gutterBottom>
+        Session {currentSession} of {totalSessions}
+      </Typography>
+
+      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+        <IconButton
+          onClick={isRunning ? onPause : onStart}
+          color="primary"
+          size="large"
+          sx={{ 
+            width: 64, 
+            height: 64,
+            bgcolor: isRunning ? 'error.main' : 'success.main',
+            '&:hover': {
+              bgcolor: isRunning ? 'error.dark' : 'success.dark'
+            }
+          }}
         >
-          Reset
-        </button>
-      </div>
-
-      {timerState.isBreak && currentVideo && (
-        <div className="mt-4">
-          <GuaranteedYouTubePlayer
-            video={currentVideo}
-            isBreak={timerState.isBreak}
-            onVideoEnd={() => {
-              if (timerState.isBreak) {
-                setTimerState((prev) => ({
-                  ...prev,
-                  isBreak: false,
-                  timeLeft: settings.workTime * 60,
-                }));
-              }
-            }}
-          />
-        </div>
-      )}
-    </div>
+          {isRunning ? <PauseIcon fontSize="large" /> : <PlayIcon fontSize="large" />}
+        </IconButton>
+        
+        <IconButton
+          onClick={onReset}
+          color="primary"
+          size="large"
+          sx={{ 
+            width: 64, 
+            height: 64,
+            bgcolor: 'grey.200',
+            '&:hover': {
+              bgcolor: 'grey.300'
+            }
+          }}
+        >
+          <RefreshIcon fontSize="large" />
+        </IconButton>
+      </Box>
+    </Paper>
   );
 };
 
