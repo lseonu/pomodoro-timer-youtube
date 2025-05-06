@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { FaUpload } from 'react-icons/fa';
 import { Video } from '../types';
 import SortableItem from './SortableItem';
 
@@ -69,9 +68,9 @@ const VideoList: React.FC<VideoListProps> = ({ videos, onVideosChange }) => {
         />
         <button
           onClick={handleAddVideo}
-          className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
-          <FaUpload />
+          Add Video
         </button>
       </div>
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>

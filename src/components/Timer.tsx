@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TimerSettings, Video } from '../types';
 import GuaranteedYouTubePlayer from './GuaranteedYouTubePlayer';
+import { FaPlay, FaPause, FaRedo } from 'react-icons/fa';
 
 interface TimerProps {
   settings: TimerSettings;
@@ -86,43 +87,42 @@ const Timer = ({ settings, videos }: TimerProps) => {
   const currentVideo = videos[timerState.currentSession % videos.length];
 
   return (
-    <div className="space-y-4">
+    <div className="bg-white p-6 rounded-lg shadow">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">
-          {timerState.isBreak ? 'Break Time' : 'Work Time'}
-        </h2>
-        <p className="text-4xl font-mono">{formatTime(timerState.timeLeft)}</p>
-        <p className="text-sm text-gray-600">
+        <p className="text-6xl font-bold font-mono text-gray-800">
+          {formatTime(timerState.timeLeft)}
+        </p>
+        <p className="text-sm text-gray-500 mt-2">
           Session {timerState.currentSession} of {timerState.totalSessions}
         </p>
       </div>
 
-      <div className="flex justify-center gap-4">
+      <div className="flex justify-center gap-4 mt-6">
         {!timerState.isRunning ? (
           <button
             onClick={startTimer}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            className="p-4 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
           >
-            Start
+            <FaPlay className="w-6 h-6" />
           </button>
         ) : (
           <button
             onClick={pauseTimer}
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            className="p-4 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition-colors"
           >
-            Pause
+            <FaPause className="w-6 h-6" />
           </button>
         )}
         <button
           onClick={resetTimer}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          className="p-4 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
         >
-          Reset
+          <FaRedo className="w-6 h-6" />
         </button>
       </div>
 
       {timerState.isBreak && currentVideo && (
-        <div className="mt-4">
+        <div className="mt-6">
           <GuaranteedYouTubePlayer
             video={currentVideo}
             isBreak={timerState.isBreak}
